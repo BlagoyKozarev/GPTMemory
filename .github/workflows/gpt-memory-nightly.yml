@@ -32,26 +32,17 @@ jobs:
           pip install pandas tqdm
           sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Check archives
-        id: chk
-        shell: bash
+      - name: Prepare workspace
         run: |
-          cnt=$(find archives -type f | wc -l | tr -d ' ')
-          echo "count=$cnt"
-          if [ "$cnt" -gt 0 ]; then echo "has_files=true" >> $GITHUB_OUTPUT; else echo "has_files=false" >> $GITHUB_OUTPUT; fi
+          set -euxo pipefail
+          mkdir -p archives out/top5
+          echo "archives file count: $(find archives -type f | wc -l || true)"
 
-      - name: Reindex + Manifest + TOP5  # пълно изпълнение
-        if: steps.chk.outputs.has_files == 'true'
+      - name: Reindex + Manifest + TOP5
         run: |
           set -euxo pipefail
           python ingest_folder.py archives
           python manifest.py
-          bash update_top5.sh
-
-      - name: TOP5 from existing MANIFEST  # без преиндексиране
-        if: steps.chk.outputs.has_files == 'false' && hashFiles('out/MANIFEST.json') != ''
-        run: |
-          set -euxo pipefail
           bash update_top5.sh
 
       - name: Upload TOP5 artifacts
@@ -62,9 +53,11 @@ jobs:
           path: |
             out/MANIFEST.*
             out/top5/*.txt
+          if-no-files-found: ignore
 
       - name: Commit changes if any
         run: |
+          set -e
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
