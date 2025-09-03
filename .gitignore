@@ -1,0 +1,6 @@
+__pycache__/
+.env
+out/*.json
+out/*.csv
+archives/*
+!.keep

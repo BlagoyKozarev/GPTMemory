@@ -1,0 +1,62 @@
+modules = ["python-3.11"]
+[agent]
+expertMode = true
+
+[nix]
+channel = "stable-25_05"
+packages = ["file", "glibcLocales", "unzip", "dig", "jq", "zip"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Document Catalog Setup"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "test_catalog_system"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "GPT-Memory Control Panel"
+
+[[workflows.workflow]]
+name = "Document Catalog Setup"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pip install -r requirements.txt && echo \"Dependencies installed successfully\" && echo \"Testing ingest_folder.py...\" && python ingest_folder.py archives && echo \"Testing manifest.py...\" && python manifest.py && echo \"Listing output files:\" && ls -la out/ && echo \"Project setup complete!\""
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "test_catalog_system"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pip install pandas python-magic-bin tqdm xxhash && python ingest_folder.py archives && python manifest.py && ls -la out/ && echo \"=== FINAL REPORT ===\" && echo \"Files created:\" && find . -type f -name \"*.py\" -o -name \"*.txt\" -o -name \"*.md\" -o -name \"*.json\" -o -name \"*.csv\" | head -15 && echo \"Python version:\" && python --version && echo \"Top installed packages:\" && pip freeze | head -10 && echo \"Contents of out/ directory:\" && ls -la out/ && echo \"Instructions: Place veganmapai-share.zip in archives/ folder and run 'python ingest_folder.py archives' then 'python manifest.py' to index it.\""
+
+[[workflows.workflow]]
+name = "GPT-Memory Control Panel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python -m http.server 5000"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
